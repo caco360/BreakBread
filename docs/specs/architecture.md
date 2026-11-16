@@ -1,12 +1,12 @@
-# docs/spec/architecture.md: System architecture (v1 pilot)
+# docs/specs/architecture.md: System architecture (v1 pilot)
 
-Scope: how the pieces fit together and why, sized for the Concordia pilot (target: 500 registered users, 50 concurrent live users), with a documented path to scale. Requirement IDs refer to `requirements.md`.
+Scope: how the pieces fit together and why, sized for the Concordia pilot (target: 500 registered users, 50 concurrent live users), with a documented path to scale. Product rules live in `SPEC.md` and the other files in `docs/specs/`; this file explains how the system implements them.
 
 ## 1. Principles
 
 1. **Start simple, scale on evidence.** One API process, one Postgres, one Redis. Big apps (Uber, Tinder) also started with a single backend and a single database, and added partitioning only when growth forced it.
-2. **Postgres is the source of truth; Redis is disposable.** Anything in Redis can be lost without losing accounts, matches or messages (NFR-6, NFR-7).
-3. **Correctness before speed in matching.** A user is never in two matches (FR-20), enforced in the database, not just in application code.
+2. **Postgres is the source of truth; Redis is disposable.** Anything in Redis can be lost without losing accounts, matches or messages.
+3. **Correctness before speed in matching.** A user is never in two matches, enforced in the database, not just in application code.
 4. **Design the keys for scaling now, build the scaling later.** Partition live state by institution from day one.
 
 ## 2. Components
@@ -41,10 +41,10 @@ flowchart LR
 | REST API | Auth, profiles, go live / go offline, match actions (decline, confirm), block, report, history. |
 | Socket.IO | Pushes `match.proposed`, `match.updated`, `chat.message`; receives `chat.send`. |
 | Matcher | A module inside the API process (not a separate service). Finds and proposes matches. |
-| PostgreSQL | Durable data. Migrations only (NFR-27). |
+| PostgreSQL | Durable data. Migrations only. |
 | Redis | Live sessions with TTL, per-institution geo index, short-lived locks. |
 | Email provider | Sends one-time login codes. |
-| Sentry / PostHog | Errors and anonymous product metrics, no personal data (NFR-29, NFR-30). |
+| Sentry / PostHog | Errors and anonymous product metrics, no personal data. |
 
 There is **no load balancer, queue, cache layer or separate worker** in v1. See section 11.
 
@@ -54,14 +54,14 @@ All live state is partitioned by `institutionId` (v1: one institution, but the k
 
 | Key | Value | Lifetime |
 |---|---|---|
-| `live:session:{userId}` | JSON: radius, window end, institutionId, lastLat/Lng timestamp | TTL = time window |
+| `live:session:{userId}` | JSON: `radius`, `windowEnd`, `institutionId`, `locationUpdatedAt` (the coordinates themselves are in the geo set) | TTL = time window |
 | `live:geo:{institutionId}` | Geo set of live userIds (queried with `GEOSEARCH`) | Members removed explicitly |
 | `claim:{userId}` | Random token | TTL ~15 s (short claim lock, section 5) |
 | `lock:matcher:{institutionId}` | Random token | TTL ~5 s (one matcher run at a time) |
 
 **Gotcha:** geo set members do not expire when the session key's TTL expires. The matcher sweep (section 4) removes any member whose `live:session:{userId}` key no longer exists. Going offline and match confirmation remove the member immediately.
 
-**Location policy:** coordinates are sent once at go-live and refreshed when a match is proposed. They live only in Redis, never in Postgres or logs (NFR-16, NFR-18).
+**Location policy:** coordinates are sent once at go-live and refreshed when a match is proposed. They live only in Redis, never in Postgres or logs.
 
 ## 4. The matcher
 
@@ -84,7 +84,7 @@ The scoring function and the filters are pure functions with no I/O, so they can
 
 ## 5. Atomic matching (Redis claim + database constraint)
 
-Goal: never two active matches for one user (FR-20), even if two matcher runs overlap, or two proposals race.
+Goal: never two active matches for one user, even if two matcher runs overlap, or two proposals race.
 
 **Layer 1: Redis claim (fast path).**
 - For the pair (A, B), acquire `claim:{A}` and `claim:{B}` with `SET key token NX PX 15000`, always in sorted userId order to avoid deadlocks.
@@ -104,15 +104,15 @@ The Redis lock reduces wasted work and contention. The database constraint is wh
 States are defined in `matching.md`: `PROPOSED → CHATTING → CONFIRMED`, or `DECLINED` / `EXPIRED`.
 
 - Every transition happens in one database transaction and is guarded by the current status (for example `UPDATE ... WHERE status = 'PROPOSED'`), so repeated or concurrent requests are harmless (idempotent).
-- Proposals and chats expire after 10 minutes (FR-24). The sweep finds matches past `expires_at`, marks them `EXPIRED`, releases participants, and notifies users.
+- Proposals and chats expire after 10 minutes. The sweep finds matches past `expires_at`, marks them `EXPIRED`, releases participants, and notifies users.
 - Confirming requires both `confirmed_a_at` and `confirmed_b_at`; the second confirm moves the match to `CONFIRMED` and takes both users out of the live set.
 
 ## 7. Realtime (Socket.IO)
 
 - The socket authenticates with the same JWT as REST on connect.
 - Each connection joins the room `user:{id}`; each active match has the room `match:{id}`.
-- Authorization is checked on every event: a user may only send to and receive from their own match (NFR-11).
-- **Reconnect:** on reconnect, the app calls `GET /matches/current` and the server re-sends current state, so a dropped connection never leaves the UI stale (NFR-8). Messages are written to Postgres first, then emitted.
+- Authorization is checked on every event: a user may only send to and receive from their own match.
+- **Reconnect:** on reconnect, the app calls `GET /matches/current` and the server re-sends current state, so a dropped connection never leaves the UI stale. Messages are written to Postgres first, then emitted.
 - Single process for the pilot. To run more than one API instance later, add the Socket.IO Redis adapter so events reach sockets on other instances (section 12).
 
 ## 8. Key flows
@@ -134,11 +134,13 @@ States are defined in `matching.md`: `PROPOSED → CHATTING → CONFIRMED`, or `
 **Hosting (recommendation, confirm at deploy time):** Railway, because Postgres and Redis come as one-click services in the same project and deploys come straight from GitHub. Expect roughly a $5 to $10 per month Hobby plan for the pilot. Alternatives: Render (free instances sleep and take 30 to 60 seconds to wake, which breaks a live-matching app, so use a paid instance) or Fly.io (no free tier, more manual setup, self-managed Postgres). Verify current prices on the provider's pricing page before committing, since they change.
 
 **CI/CD (GitHub Actions):**
-1. On every push and pull request: install, lint, type check, tests against Postgres and Redis service containers, dependency audit (NFR-15, NFR-26).
+1. On every push and pull request: install, lint, type check, tests against Postgres and Redis service containers, dependency audit.
 2. On merge to `main` with green checks: deploy the API; run database migrations as a release step before the new version starts taking traffic.
 3. Mobile: manual EAS builds and TestFlight / Android internal testing until the pilot.
 
-**Secrets:** local `.env` (git-ignored, `.env.example` committed); platform variables for production; GitHub Actions secrets for CI. The API fails to start if a required variable is missing (NFR-14).
+**Secrets:** local `.env` (git-ignored, `.env.example` committed); platform variables for production; GitHub Actions secrets for CI. The API fails to start if a required variable is missing.
+
+Status after Milestone 1: `config.ts` still falls back to the Docker Compose defaults for every variable, and there is no `.env.example` yet. Both change in Milestone 2, when the first real secret (the JWT signing key) arrives: validate the environment with Zod at startup, keep defaults only for local development and tests, and commit `.env.example`.
 
 ## 10. Failure behavior
 
@@ -185,13 +187,55 @@ States are defined in `matching.md`: `PROPOSED → CHATTING → CONFIRMED`, or `
 | Matcher trigger | Events plus a ~10 s sweep | Events only (a missed trigger strands users); timer only (slower proposals) |
 | Atomicity | Redis claim plus database constraint | DB only (more contention); Redis only (not durable) |
 | Location updates | Once at go-live, refreshed at proposal | Periodic heartbeat (battery and write cost) |
-| Realtime transport | Socket.IO | Raw WebSockets (less built-in reconnect and rooms); |
+| Realtime transport | Socket.IO | Raw WebSockets (less built-in reconnect and rooms) |
 | Matcher location | Module in the API process | Separate worker service |
 | Hosting | Managed platform (Railway recommended) | Render, Fly.io, AWS |
 
-## 14. Open items
+## 14. Code layout
 
-- Reconcile this document with what Milestone 1 actually built (folder layout, commands, versions).
-- Confirm the hosting platform and the real monthly budget (NFR-31).
+**Today (end of Milestone 1):**
+
+```
+.github/workflows/ci.yml   type check, tests, dependency audit (lint not yet, see open items)
+docker-compose.yml         local Postgres 16 and Redis 7
+apps/api/
+  src/
+    app.ts       buildApp(): routes, no listening (tests use this)
+    server.ts    starts the real server
+    config.ts    environment variables
+    db.ts        Postgres pool
+    redis.ts     Redis client
+  test/
+    health.test.ts
+docs/specs/                SPEC detail files and this document
+```
+
+Versions: Node 24 (LTS), TypeScript strict, Fastify 5, Vitest. Commands are listed in `CLAUDE.md`.
+
+**From Milestone 2 on:** one folder per feature, created only when a slice needs it.
+
+```
+apps/api/
+  migrations/          node-pg-migrate files (Milestone 2)
+  src/
+    auth/  profile/  live/  chat/  safety/
+    matching/
+      score.ts, filters.ts, state.ts   pure functions, no I/O
+      matcher.ts, claim.ts             wiring to Redis and Postgres
+    realtime/          Socket.IO setup
+  test/
+    unit/              pure functions, no Docker needed
+    api/               Supertest against real Postgres and Redis
+```
+
+Rule: files that hold pure logic (scoring, filters, state machine) never import `db.ts` or `redis.ts`. That is what makes them unit-testable without Docker.
+
+## 15. Open items
+
+- Choose a linter. `typescript-eslint` only supports TypeScript below 6.1 and the project uses TypeScript 7, so ESLint cannot lint the TypeScript code yet.
+- Confirm the hosting platform and the real monthly budget.
 - Choose the email provider.
 - Decide the exact sweep interval and lock TTLs after measuring on real hardware.
+- Before Milestone 4: where "already declined this session" is stored (for example a Redis set `live:declined:{userId}` with the session's TTL).
+- Before Milestone 4: how the location is "refreshed when a match is proposed". `api.md` has no endpoint or socket event for it yet.
+- Before Milestone 5: what moves a match from `PROPOSED` to `CHATTING` (both accept, or the first message). `api.md` has no accept action yet.

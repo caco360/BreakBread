@@ -40,7 +40,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
 
       # npm ci installs exactly what package-lock.json says.
@@ -49,3 +49,6 @@ jobs:
       - run: npm run typecheck
 
       - run: npm test
+
+      # Fails the build if any dependency has a known high or critical vulnerability.
+      - run: npm audit --audit-level=high

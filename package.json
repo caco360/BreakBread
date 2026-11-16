@@ -1,7 +1,12 @@
 {
   "name": "lunch-now",
   "private": true,
-  "workspaces": ["apps/*"],
+  "engines": {
+    "node": ">=24"
+  },
+  "workspaces": [
+    "apps/*"
+  ],
   "scripts": {
     "test": "npm run test --workspace apps/api",
     "typecheck": "npm run typecheck --workspace apps/api",

@@ -33,6 +33,7 @@ Goal of the project: personal learning project and resume piece, not a business.
 - Section 6, API sketch: [docs/specs/api.md](docs/specs/api.md)
 - Section 7, safety and privacy: [docs/specs/safety.md](docs/specs/safety.md)
 - UI design: [docs/specs/ui.md](docs/specs/ui.md)
+- System architecture (components, Redis design, atomic matching, deployment, scaling): [docs/specs/architecture.md](docs/specs/architecture.md)
 
 ## 8. Non-goals for v1
 
@@ -44,6 +45,7 @@ Saved favorite spots and restaurant search, group matches, ratings, payments, pu
 - API tests (Vitest + Supertest) against a real Postgres and Redis in Docker.
 - One end-to-end test of the full flow with two simulated users.
 - CI (GitHub Actions) from the first passing test. Automatic backend deploy once the first vertical slice works end to end. Mobile releases stay manual until the pilot.
+- Error tracking (Sentry) and anonymous product metrics (PostHog) before the pilot, with no personal data in either.
 
 ## 10. Milestones
 
