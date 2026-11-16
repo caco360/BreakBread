@@ -190,6 +190,7 @@ Status after Milestone 1: `config.ts` still falls back to the Docker Compose def
 | Realtime transport | Socket.IO | Raw WebSockets (less built-in reconnect and rooms) |
 | Matcher location | Module in the API process | Separate worker service |
 | Hosting | Managed platform (Railway recommended) | Render, Fly.io, AWS |
+| TypeScript version | TypeScript 7, no linter until `typescript-eslint` supports it | Drop to TypeScript 6.0 to get ESLint now |
 
 ## 14. Code layout
 
@@ -232,7 +233,7 @@ Rule: files that hold pure logic (scoring, filters, state machine) never import 
 
 ## 15. Open items
 
-- Choose a linter. `typescript-eslint` only supports TypeScript below 6.1 and the project uses TypeScript 7, so ESLint cannot lint the TypeScript code yet.
+- Lint: `typescript-eslint` only supports TypeScript below 6.1. Decision: keep TypeScript 7 and add ESLint + `typescript-eslint` to CI once it supports TypeScript 7 (check its `typescript` peer dependency range).
 - Confirm the hosting platform and the real monthly budget.
 - Choose the email provider.
 - Decide the exact sweep interval and lock TTLs after measuring on real hardware.
