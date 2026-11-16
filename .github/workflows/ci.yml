@@ -15,13 +15,13 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_USER: lunch
-          POSTGRES_PASSWORD: lunch
-          POSTGRES_DB: lunch_now
+          POSTGRES_USER: breakbread
+          POSTGRES_PASSWORD: breakbread
+          POSTGRES_DB: break_bread
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U lunch -d lunch_now"
+          --health-cmd "pg_isready -U breakbread -d break_bread"
           --health-interval 2s
           --health-timeout 3s
           --health-retries 15

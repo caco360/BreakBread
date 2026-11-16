@@ -8,7 +8,7 @@ import { createRedis } from "../src/redis.js";
 
 // Nothing listens on port 1, so connecting to it fails immediately.
 // That lets us simulate "Postgres is down" or "Redis is down".
-const DEAD_POSTGRES_URL = "postgres://lunch:lunch@localhost:1/lunch_now";
+const DEAD_POSTGRES_URL = "postgres://breakbread:breakbread@localhost:1/break_bread";
 const DEAD_REDIS_URL = "redis://localhost:1";
 
 describe("GET /health", () => {

@@ -1,4 +1,4 @@
-# SPEC.md: "Lunch Now" (working title)
+# SPEC.md: "Break Bread"
 
 A mobile app where people nearby who want to eat right now tap **Go Live**, get matched with someone whose food tastes are close to theirs, chat briefly, confirm, and meet at a restaurant within ~10-20 minutes.
 

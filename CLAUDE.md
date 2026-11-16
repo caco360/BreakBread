@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Project: "Lunch Now" (working title), an app that matches nearby people who want to eat right now. Read `SPEC.md` for the full design before making any change.
+Project: "Break Bread", an app that matches nearby people who want to eat right now. Read `SPEC.md` for the full design before making any change.
 
 Spec files by area: matching rules and match state machine → `docs/specs/matching.md`; database tables and Redis keys → `docs/specs/data-model.md`; REST endpoints and WebSocket events → `docs/specs/api.md`; auth, location privacy, block/report → `docs/specs/safety.md`; screens, colors, navigation → `docs/specs/ui.md`; components, Redis design, atomic matching, deployment, code layout → `docs/specs/architecture.md`. Goals, user flow, non-goals, milestones, assumptions and testing stay in `SPEC.md`.
 
