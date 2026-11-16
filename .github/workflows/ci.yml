@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    # Service containers play the role of docker-compose.yml on GitHub's machine.
+    # Same images and credentials, so the config.ts defaults work unchanged.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: lunch
+          POSTGRES_PASSWORD: lunch
+          POSTGRES_DB: lunch_now
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U lunch -d lunch_now"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 15
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # npm ci installs exactly what package-lock.json says.
+      - run: npm ci
+
+      - run: npm run typecheck
+
+      - run: npm test
