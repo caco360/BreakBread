@@ -54,7 +54,7 @@ CLAUDE.md
 Fill these in as soon as they exist (ask me to update this section after each setup step):
 
 - Start dependencies: `docker compose up -d --wait` (Docker Desktop must be running)
-- Run API: `npm run dev:api`
+- Run API: `npm run dev:api` (needs `apps/api/.env`; copy `apps/api/.env.example` and fill in the secrets)
 - Run tests: `npm test` (type-check: `npm run typecheck`)
 - Run mobile app: _TBD_
 

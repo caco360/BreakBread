@@ -1,10 +1,13 @@
 import { afterEach, describe, expect, it } from "vitest";
 import request from "supertest";
 import type { FastifyInstance } from "fastify";
-import { buildApp } from "../src/app.js";
-import { config } from "../src/config.js";
-import { createDbPool } from "../src/db.js";
-import { createRedis } from "../src/redis.js";
+import { buildApp } from "../../src/app.js";
+import { loadConfig } from "../../src/config.js";
+import { createDbPool } from "../../src/db.js";
+import { createRedis } from "../../src/redis.js";
+
+// vitest.config.ts provides the environment variables for tests.
+const config = loadConfig(process.env);
 
 // Nothing listens on port 1, so connecting to it fails immediately.
 // That lets us simulate "Postgres is down" or "Redis is down".
@@ -19,6 +22,7 @@ describe("GET /health", () => {
     app = buildApp({
       db: createDbPool(databaseUrl),
       redis: createRedis(redisUrl),
+      config,
     });
     // ready() finishes Fastify's setup without opening a port.
     await app.ready();

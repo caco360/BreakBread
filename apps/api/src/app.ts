@@ -1,12 +1,14 @@
 import Fastify, { type FastifyInstance } from "fastify";
 import type pg from "pg";
 import type { Redis } from "ioredis";
+import type { Config } from "./config.js";
 
 // The connections the app needs. They are passed in rather than created here,
 // so tests can decide what the app connects to.
 export interface AppDependencies {
   db: pg.Pool;
   redis: Redis;
+  config: Config;
 }
 
 type ServiceStatus = "up" | "down";
