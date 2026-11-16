@@ -1,0 +1,26 @@
+# Local development and test dependencies. Start with: docker compose up -d --wait
+# These credentials are for local use only; production values come from environment variables.
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: lunch
+      POSTGRES_PASSWORD: lunch
+      POSTGRES_DB: lunch_now
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lunch -d lunch_now"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
