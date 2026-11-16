@@ -54,7 +54,7 @@ All live state is partitioned by `institutionId` (v1: one institution, but the k
 
 | Key | Value | Lifetime |
 |---|---|---|
-| `live:session:{userId}` | JSON: `radius`, `windowEnd`, `institutionId`, `locationUpdatedAt` (the coordinates themselves are in the geo set) | TTL = time window |
+| `live:session:{userId}` | JSON: `radius`, `windowEnd`, `budget`, `institutionId`, `locationUpdatedAt` (the coordinates themselves are in the geo set) | TTL = time window |
 | `live:geo:{institutionId}` | Geo set of live userIds (queried with `GEOSEARCH`) | Members removed explicitly |
 | `claim:{userId}` | Random token | TTL ~15 s (short claim lock, section 5) |
 | `lock:matcher:{institutionId}` | Random token | TTL ~5 s (one matcher run at a time) |
@@ -119,7 +119,7 @@ States are defined in `matching.md`: `PROPOSED → CHATTING → CONFIRMED`, or `
 
 **Login:** app → `POST /auth/request-code` → server checks the email domain against `institutions`, stores a hashed code with expiry and attempt count, sends email. → `POST /auth/verify-code` → server verifies and returns a JWT.
 
-**Go live:** app → `POST /live` (location, radius, window) → server validates, writes `live:session:{userId}` with TTL, adds the user to `live:geo:{institutionId}`, triggers the matcher.
+**Go live:** app → `POST /live` (location, radius, window, budget) → server validates, writes `live:session:{userId}` with TTL, adds the user to `live:geo:{institutionId}`, triggers the matcher.
 
 **Match to confirm:** matcher claims a pair (section 5) → `match.proposed` pushed to both → users chat over sockets → each calls `POST /matches/:id/confirm` → second confirm sets `CONFIRMED`, removes both from live → both apps show the confirmed screen.
 

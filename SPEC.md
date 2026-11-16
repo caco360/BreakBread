@@ -18,9 +18,9 @@ Goal of the project: personal learning project and resume piece, not a business.
 
 ## 2. Core user flow
 
-1. **Sign up**: enter school email, receive a one-time code, enter it. Account is verified if the email domain belongs to a supported institution.
-2. **Build food profile** (once, editable): cuisines liked, dietary needs, budget range, "happy to share dishes" yes/no.
-3. **Go Live**: choose radius (e.g. 500 m / 1 km / 2 km) and time window (e.g. next 20 / 30 / 45 min). App sends current location. User is now "live".
+1. **Sign up / log in** (same flow, no password): enter school email, receive a one-time code, enter it. New users then give first name, last name (never shown to others) and confirm they are 18+. Account is verified if the email domain belongs to a supported institution.
+2. **Build profile** (once, editable, can be skipped at signup): short description, cuisines liked, dietary needs, "happy to share dishes" yes/no. Cuisines and dietary needs are picked from fixed lists.
+3. **Go Live**: choose radius (e.g. 500 m / 1 km / 2 km), time window (e.g. next 20 / 30 / 45 min) and budget (`$`, `$$` or `$$$`). App sends current location. User is now "live".
 4. **Get matched**: the server finds other live users within the radius, scores taste similarity, and proposes the best candidate. The user sees the candidate's first name and food profile (never exact location).
 5. **Chat**: both users get a match chat to agree on where and when.
 6. **Confirm**: each user taps Confirm. When both have confirmed, the match is `CONFIRMED` and both leave "live" mode.
@@ -59,9 +59,9 @@ Saved favorite spots and restaurant search, group matches, ratings, payments, pu
 ## 11. Assumptions to confirm
 
 - Pairs (2 people) in v1, not groups.
-- Concordia email domains to allow (confirm the real ones, for example staff versus student domains). 
-- Email delivery provider (for example Resend) for login codes.
-- Building email-code login ourselves, with care, rather than using a managed auth provider.
+- Settled: only the student domain `live.concordia.ca` is allowed. Staff addresses (`concordia.ca`) are rejected.
+- Email delivery provider for login codes: still open. Needs a provider account and a verified domain before the pilot. Until then, development prints the code in the API terminal.
+- Settled: email-code login is built in-house, with no passwords.
 - Plain SQL migrations with `pg`, rather than an ORM.
 - Concordia email format is : netname@live.concordia.ca
 
@@ -72,3 +72,6 @@ Saved favorite spots and restaurant search, group matches, ratings, payments, pu
 - Groups of 3-4.
 - Ratings after a meetup.
 - Additional universities.
+- Optional password login (the email code stays as the reset path).
+- Profile picture, date of birth, major, year of study.
+- "Shared meals" count on the profile, computed from confirmed matches.

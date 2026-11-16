@@ -11,7 +11,7 @@ Hard filters: dietary needs must be compatible (e.g. a vegetarian is never match
 
 Score (0 to 1) = weighted sum:
 - cuisine overlap (Jaccard similarity): 0.6
-- budget range overlap: 0.25
+- budget agreement: 0.25. Budget (`$`, `$$` or `$$$`) comes from each user's live session, not from the profile. The exact formula is decided in Milestone 4.
 - "happy to share dishes" agreement: 0.15
 
 Pick the highest score above a minimum threshold; break ties by distance. Pure function, unit-tested heavily. No machine learning.

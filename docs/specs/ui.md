@@ -1,4 +1,4 @@
-# docs/spec/ui.md: UI design (v1)
+# docs/specs/ui.md: UI design (v1)
  
 Status: first draft from the author's vision. Details marked **TBD** are intentionally open.
  
@@ -30,7 +30,7 @@ The match flow (searching, proposal, chat, confirmed) is **not** a tab. It is a 
 - Greeting with the user's first name ("Hi, Sara").
 - Map showing the user's own location and, once chosen, the search radius as an orange circle.
 - Large orange **Go Live** button.
-- Tapping Go Live opens a small sheet to pick the radius and time window, then starts the live session.
+- Tapping Go Live opens a small sheet to pick the radius, time window and budget (`$`, `$$` or `$$$`), then starts the live session.
 - Other users are never shown on the map. Matching is automatic, and showing people would expose where they are.
 ### Match flow (full screen, over Home)
 1. **Searching:** status screen with a Cancel / Go Offline button and time remaining.
@@ -44,7 +44,7 @@ The match flow (searching, proposal, chat, confirmed) is **not** a tab. It is a 
 ### Profile
 - Shows the user's own profile: name, short description, food preferences (cuisines), dietary restrictions.
 - An **Edit** button switches the screen into edit mode. Save and Cancel.
-- Budget range and "happy to share dishes" (from the matching spec) are also edited here; their placement is **TBD**.
+- "Happy to share dishes" is also edited here. Budget is not part of the profile; it is chosen on the Go Live sheet.
 ## 5. Implications for the rest of the spec
  
 - `users` needs a short `bio` / description field.
