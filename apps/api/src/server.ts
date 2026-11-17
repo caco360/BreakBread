@@ -1,4 +1,5 @@
 import { buildApp } from "./app.js";
+import { createConsoleEmailSender } from "./auth/email-sender.js";
 import { loadConfig, type Config } from "./config.js";
 import { createDbPool } from "./db.js";
 import { createRedis } from "./redis.js";
@@ -18,6 +19,9 @@ const app = buildApp({
   db: createDbPool(config.databaseUrl),
   redis: createRedis(config.redisUrl),
   config,
+  // Development only: prints login codes in this terminal instead of emailing
+  // them. loadConfig has already refused to run in production.
+  emailSender: createConsoleEmailSender(),
 });
 
 try {

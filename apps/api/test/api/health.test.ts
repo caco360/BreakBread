@@ -5,6 +5,7 @@ import { buildApp } from "../../src/app.js";
 import { loadConfig } from "../../src/config.js";
 import { createDbPool } from "../../src/db.js";
 import { createRedis } from "../../src/redis.js";
+import { FakeEmailSender } from "../helpers.js";
 
 // vitest.config.ts provides the environment variables for tests.
 const config = loadConfig(process.env);
@@ -23,6 +24,7 @@ describe("GET /health", () => {
       db: createDbPool(databaseUrl),
       redis: createRedis(redisUrl),
       config,
+      emailSender: new FakeEmailSender(),
     });
     // ready() finishes Fastify's setup without opening a port.
     await app.ready();
