@@ -236,6 +236,8 @@ Rule: files that hold pure logic (scoring, filters, state machine) never import 
 - Lint: `typescript-eslint` only supports TypeScript below 6.1. Decision: keep TypeScript 7 and add ESLint + `typescript-eslint` to CI once it supports TypeScript 7 (check its `typescript` peer dependency range).
 - Confirm the hosting platform and the real monthly budget.
 - Choose the email provider.
+- Before deploy: set Fastify's `trustProxy` option for the hosting platform. Rate limits are per client IP, and behind the platform's proxy every request appears to come from the proxy's address, so without it all users would share one limit.
+- Before deploy: decide what auth endpoints do when Redis is down. Today the rate limiter fails closed (requests get a 500), so nobody can log in during a Redis outage.
 - Decide the exact sweep interval and lock TTLs after measuring on real hardware.
 - Before Milestone 4: where "already declined this session" is stored (for example a Redis set `live:declined:{userId}` with the session's TTL).
 - Before Milestone 4: how the location is "refreshed when a match is proposed". `api.md` has no endpoint or socket event for it yet.

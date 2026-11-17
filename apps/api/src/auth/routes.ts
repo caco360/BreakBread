@@ -31,7 +31,11 @@ export function registerAuthRoutes(app: FastifyInstance, deps: AppDependencies):
   const { db, config, emailSender } = deps;
 
   // Step 1 of login: "send a code to this email".
-  app.post("/auth/request-code", async (request, reply) => {
+  // Limit: 10 requests per hour from one IP address. This stops one client
+  // from making us send emails to many addresses.
+  const requestCodeLimit = { config: { rateLimit: { max: 10, timeWindow: "1 hour" } } };
+
+  app.post("/auth/request-code", requestCodeLimit, async (request, reply) => {
     // 1. Check the shape of the body.
     const body = requestCodeBody.safeParse(request.body);
     if (!body.success) {
@@ -98,7 +102,11 @@ export function registerAuthRoutes(app: FastifyInstance, deps: AppDependencies):
 
   // Step 2 of login: "here is the code I received". On success the user is
   // logged in, and their account is created if this is their first time.
-  app.post("/auth/verify-code", async (request, reply) => {
+  // Limit: 20 checks per 10 minutes from one IP address. Together with the
+  // 5 attempts per code, this makes guessing codes hopeless.
+  const verifyCodeLimit = { config: { rateLimit: { max: 20, timeWindow: "10 minutes" } } };
+
+  app.post("/auth/verify-code", verifyCodeLimit, async (request, reply) => {
     const body = verifyCodeBody.safeParse(request.body);
     if (!body.success) {
       return sendError(reply, 400, "invalid_request", "Send a JSON body like { \"email\": \"...\", \"code\": \"123456\" }.");

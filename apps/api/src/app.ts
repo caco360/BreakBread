@@ -1,5 +1,6 @@
 import Fastify, { type FastifyInstance } from "fastify";
 import fastifyJwt from "@fastify/jwt";
+import fastifyRateLimit from "@fastify/rate-limit";
 import type pg from "pg";
 import type { Redis } from "ioredis";
 import type { EmailSender } from "./auth/email-sender.js";
@@ -29,10 +30,16 @@ async function checkService(check: () => Promise<unknown>): Promise<ServiceStatu
 }
 
 // Anything can be thrown in JavaScript, so a caught error has the type
-// "unknown". Fastify puts a statusCode on the errors it creates itself (for
-// example 400 for a body that is not valid JSON). Everything else counts as 500.
+// "unknown". Fastify and its plugins put a statusCode on what they throw (for
+// example 400 for a body that is not valid JSON, 429 for a rate limit).
+// Everything else counts as 500.
 function errorStatus(error: unknown): number {
-  if (error instanceof Error && "statusCode" in error && typeof error.statusCode === "number") {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "statusCode" in error &&
+    typeof error.statusCode === "number"
+  ) {
     return error.statusCode;
   }
   return 500;
@@ -57,7 +64,12 @@ export function buildApp(deps: AppDependencies): FastifyInstance {
   app.setErrorHandler((error, _request, reply) => {
     const status = errorStatus(error);
 
-    // 4xx means the client sent something wrong.
+    // 429 Too Many Requests comes from the rate limiter.
+    if (status === 429) {
+      return sendError(reply, 429, "rate_limited", "Too many requests. Please try again later.");
+    }
+
+    // Any other 4xx means the client sent something wrong.
     if (status >= 400 && status < 500) {
       return sendError(reply, status, "invalid_request", "The request could not be understood.");
     }
@@ -86,7 +98,17 @@ export function buildApp(deps: AppDependencies): FastifyInstance {
     });
   });
 
-  registerAuthRoutes(app, deps);
+  // Rate limiting: counts requests per client IP address in Redis.
+  // "global: false" means no route is limited unless it asks to be; the auth
+  // routes set their own limits in auth/routes.ts.
+  app.register(fastifyRateLimit, { global: false, redis });
+
+  // app.register does not finish immediately. app.after runs once the plugins
+  // above are loaded, which the rate limiter needs: it can only attach itself
+  // to routes that are added after it.
+  app.after(() => {
+    registerAuthRoutes(app, deps);
+  });
 
   // When the app closes, close its connections too so the process can exit.
   app.addHook("onClose", async () => {
