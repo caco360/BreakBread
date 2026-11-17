@@ -55,7 +55,9 @@ Fill these in as soon as they exist (ask me to update this section after each se
 
 - Start dependencies: `docker compose up -d --wait` (Docker Desktop must be running)
 - Run API: `npm run dev:api` (needs `apps/api/.env`; copy `apps/api/.env.example` and fill in the secrets)
-- Run tests: `npm test` (type-check: `npm run typecheck`)
+- Apply database migrations (development database): `npm run migrate`
+- New migration file: `npm run migrate:create --workspace apps/api -- <name>`
+- Run tests: `npm test` (type-check: `npm run typecheck`). Tests use their own database `break_bread_test` and Redis database 1, and apply migrations themselves.
 - Run mobile app: _TBD_
 
 ## Security reminders

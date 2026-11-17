@@ -1,16 +1,14 @@
 import { defineConfig } from "vitest/config";
+import { testEnv } from "./test/test-env.js";
 
 export default defineConfig({
   test: {
-    // Environment variables for the test run. These secrets are fake and
-    // only exist so loadConfig accepts the environment.
-    env: {
-      NODE_ENV: "test",
-      JWT_SECRET: "test-only-jwt-secret-0123456789abcdef",
-      LOGIN_CODE_SECRET: "test-only-code-secret-0123456789abcdef",
-    },
+    // Environment variables every test sees.
+    env: testEnv,
     // All test files share one Postgres and one Redis, so run one file at a
     // time. Otherwise two files could change the same rows at once.
     fileParallelism: false,
+    // Runs once before all tests: creates the test database and applies migrations.
+    globalSetup: "./test/global-setup.ts",
   },
 });
