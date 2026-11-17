@@ -75,3 +75,32 @@ export async function resetState(db: pg.Pool, redis: Redis): Promise<void> {
   await db.query("TRUNCATE users, login_codes CASCADE");
   await redis.flushdb();
 }
+
+// Logs in as the given email the same way the app would: ask for a code,
+// read it from the fake inbox, send it back. Returns the login token.
+export async function loginAs(
+  ctx: TestContext,
+  email: string,
+): Promise<{ token: string; userId: string }> {
+  const requested = await ctx.app.inject({
+    method: "POST",
+    url: "/auth/request-code",
+    payload: { email },
+  });
+  const code = ctx.emails.lastCodeFor(email);
+  if (requested.statusCode !== 200 || code === undefined) {
+    throw new Error(`loginAs: could not request a code (status ${requested.statusCode})`);
+  }
+
+  const verified = await ctx.app.inject({
+    method: "POST",
+    url: "/auth/verify-code",
+    payload: { email, code },
+  });
+  if (verified.statusCode !== 200) {
+    throw new Error(`loginAs: could not verify the code (status ${verified.statusCode})`);
+  }
+
+  const body = verified.json<{ token: string; user: { id: string } }>();
+  return { token: body.token, userId: body.user.id };
+}
