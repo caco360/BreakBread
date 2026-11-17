@@ -83,6 +83,11 @@ export function buildApp(deps: AppDependencies): FastifyInstance {
     return sendError(reply, 500, "internal_error", "Something went wrong on our side.");
   });
 
+  // Called when no route matches the address or method of a request.
+  app.setNotFoundHandler((_request, reply) => {
+    return sendError(reply, 404, "not_found", "There is nothing at this address.");
+  });
+
   app.get("/health", async (_request, reply) => {
     // Check both at the same time rather than one after the other.
     const [postgres, redisStatus] = await Promise.all([
