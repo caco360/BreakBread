@@ -11,13 +11,13 @@ const SECRET = "s".repeat(32);
 
 describe("normalizeEmail", () => {
   it("trims spaces and lowercases", () => {
-    expect(normalizeEmail(" Carl@Live.Concordia.CA ")).toBe("carl@live.concordia.ca");
+    expect(normalizeEmail(" Student@Live.Concordia.CA ")).toBe("student@live.concordia.ca");
   });
 });
 
 describe("emailDomain", () => {
   it("returns everything after the @", () => {
-    expect(emailDomain("carl@live.concordia.ca")).toBe("live.concordia.ca");
+    expect(emailDomain("student@live.concordia.ca")).toBe("live.concordia.ca");
   });
 
   it("does not stop early on a look-alike domain", () => {
@@ -38,7 +38,7 @@ describe("generateCode", () => {
 });
 
 describe("hashCode", () => {
-  const email = "carl@live.concordia.ca";
+  const email = "student@live.concordia.ca";
 
   it("gives the same hash for the same inputs", () => {
     expect(hashCode("123456", email, SECRET)).toBe(hashCode("123456", email, SECRET));

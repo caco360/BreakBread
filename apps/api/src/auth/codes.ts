@@ -9,7 +9,7 @@ export const MAX_ATTEMPTS = 5;
 // A new code can be requested for the same email once every 60 seconds.
 export const RESEND_WAIT_MS = 60 * 1000;
 
-// " Carl@Live.Concordia.CA " and "carl@live.concordia.ca" are the same inbox,
+// " Student@Live.Concordia.CA " and "student@live.concordia.ca" are the same inbox,
 // so they must become the same text before we compare or store anything.
 export function normalizeEmail(raw: string): string {
   return raw.trim().toLowerCase();

@@ -31,7 +31,7 @@ describe("POST /auth/request-code", () => {
   }
 
   it("sends a 6-digit code and stores only its hash", async () => {
-    const email = "carl@live.concordia.ca";
+    const email = "student@live.concordia.ca";
 
     const response = await requestCode({ email });
 
@@ -52,11 +52,11 @@ describe("POST /auth/request-code", () => {
   });
 
   it("treats capitals and surrounding spaces as the same email", async () => {
-    const response = await requestCode({ email: " Carl@Live.Concordia.CA " });
+    const response = await requestCode({ email: " Student@Live.Concordia.CA " });
 
     expect(response.status).toBe(200);
-    expect(await storedCode("carl@live.concordia.ca")).toBeDefined();
-    expect(ctx.emails.lastCodeFor("carl@live.concordia.ca")).toMatch(/^\d{6}$/);
+    expect(await storedCode("student@live.concordia.ca")).toBeDefined();
+    expect(ctx.emails.lastCodeFor("student@live.concordia.ca")).toMatch(/^\d{6}$/);
   });
 
   it.each([
@@ -96,7 +96,7 @@ describe("POST /auth/request-code", () => {
   });
 
   it("refuses a second code within 60 seconds and keeps the first", async () => {
-    const email = "carl@live.concordia.ca";
+    const email = "student@live.concordia.ca";
     await requestCode({ email });
     const first = await storedCode(email);
 
@@ -109,7 +109,7 @@ describe("POST /auth/request-code", () => {
   });
 
   it("replaces the code and resets attempts once 60 seconds have passed", async () => {
-    const email = "carl@live.concordia.ca";
+    const email = "student@live.concordia.ca";
     await requestCode({ email });
     const first = await storedCode(email);
     // Pretend the first code was requested 61 seconds ago and guessed wrong 3 times.
@@ -128,7 +128,7 @@ describe("POST /auth/request-code", () => {
   });
 
   it("returns 503 when the email cannot be sent, and allows an immediate retry", async () => {
-    const email = "carl@live.concordia.ca";
+    const email = "student@live.concordia.ca";
     ctx.emails.failNext();
 
     const failed = await requestCode({ email });

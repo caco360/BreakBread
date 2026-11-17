@@ -29,7 +29,7 @@
 
 ## Review Focus
 
-1. **Email typed with capitals or spaces** (`" Carl@Live.Concordia.CA "`): must be the same account as `carl@live.concordia.ca`. Tests in Tasks 4 and 5.
+1. **Email typed with capitals or spaces** (`" Student@Live.Concordia.CA "`): must be the same account as `student@live.concordia.ca`. Tests in Tasks 4 and 5.
 2. **Look-alike domains** (`a@live.concordia.ca.evil.com`, `a@notlive.concordia.ca`, `a@concordia.ca`): must be rejected; only an exact domain match counts. Test in Task 4.
 3. **Email sender fails**: the user gets a 503 and can retry at once, not be stuck behind the 60 second resend wait. Test in Task 4.
 4. **Valid token whose user no longer exists**: 401, never a 500 or an empty 200. Test in Task 5.
@@ -195,10 +195,10 @@ Behavior of `POST /auth/request-code` with body `{ email: string }`:
 
 `server.ts` passes `createConsoleEmailSender()`. The console sender is safe only because `loadConfig` refuses `production` (Task 2); say so in a comment there.
 
-- [ ] **Step 1: Failing unit tests** (`codes.test.ts`): `normalizeEmail(" Carl@Live.Concordia.CA ") === "carl@live.concordia.ca"`; `emailDomain("a@live.concordia.ca.evil.com") === "live.concordia.ca.evil.com"`; `generateCode()` matches `/^\d{6}$/` over 1000 calls; `hashCode` is deterministic, differs for another code, another email and another secret, and never contains the code; `hashesMatch` true for equal, false for different, false for different lengths.
+- [ ] **Step 1: Failing unit tests** (`codes.test.ts`): `normalizeEmail(" Student@Live.Concordia.CA ") === "student@live.concordia.ca"`; `emailDomain("a@live.concordia.ca.evil.com") === "live.concordia.ca.evil.com"`; `generateCode()` matches `/^\d{6}$/` over 1000 calls; `hashCode` is deterministic, differs for another code, another email and another secret, and never contains the code; `hashesMatch` true for equal, false for different, false for different lengths.
 - [ ] **Step 2: Failing API tests** (`auth-request-code.test.ts`, `resetState` in `beforeEach`):
   - valid email → 200 `{ok:true}`; `emails.lastCodeFor(email)` matches `/^\d{6}$/`; the `login_codes` row's `code_hash` is not the code and `attempts` is 0.
-  - `" Carl@Live.Concordia.CA "` → 200 and the row's email is `carl@live.concordia.ca`.
+  - `" Student@Live.Concordia.CA "` → 200 and the row's email is `student@live.concordia.ca`.
   - each of `a@gmail.com`, `a@concordia.ca`, `a@notlive.concordia.ca`, `a@live.concordia.ca.evil.com` → 400 `unsupported_email_domain`, no email sent.
   - `{}`, `{email: 5}`, `{email: "nope"}`, `{email: valid, extra: 1}` → 400 `invalid_request`.
   - second request for the same email at once → 429 `resend_too_soon`; the stored code is unchanged.
@@ -240,7 +240,7 @@ Incrementing before comparing is deliberate: two guesses sent at the same instan
   - correct code → 200; `user.email` normalized, `firstName` null, `complete` false; a `users` row exists with the Concordia `institution_id`; the `login_codes` row is gone.
   - the same code again → 401 `invalid_code`.
   - second login for the same email → same `user.id`, still one `users` row.
-  - request with `"carl@live.concordia.ca"`, verify with `" Carl@Live.Concordia.CA "` → 200.
+  - request with `"student@live.concordia.ca"`, verify with `" Student@Live.Concordia.CA "` → 200.
   - wrong code → 401 and `attempts` is 1; the right code afterwards → 200.
   - 5 wrong codes, then the right code → 401.
   - `expires_at` set to the past → 401 with the right code.
@@ -285,7 +285,7 @@ export function registerAccountRoutes(app: FastifyInstance, deps: AppDependencie
 - [ ] **Step 2: Failing API tests:**
   - `GET /me` with no header, with `Bearer garbage`, and with a token signed by a different secret → 401 `unauthorized`.
   - `GET /me` after `loginAs` → 200, own email, `complete: false`.
-  - `PATCH {firstName:" Carl ", lastName:"Nasr", isAdult:true}` → 200, `firstName: "Carl"`, `complete: true`; `GET /me` agrees.
+  - `PATCH {firstName:" Sam ", lastName:"Tester", isAdult:true}` → 200, `firstName: "Sam"`, `complete: true`; `GET /me` agrees.
   - `PATCH {bio:"x".repeat(201)}` → 400; `"x".repeat(200)` → 200; `{bio:null}` → 200 with `bio: null`.
   - `PATCH {firstName:"   "}`, `{}`, `{isAdult:false}`, `{email:"b@live.concordia.ca"}`, `{firstName:"A", institutionId:"..."}` → 400 `invalid_request`; email and `institution_id` in the database are unchanged.
   - `isAdult:true` sent twice → `age_confirmed_at` keeps its first value.
