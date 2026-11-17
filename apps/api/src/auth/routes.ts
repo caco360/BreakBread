@@ -2,12 +2,15 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import type { AppDependencies } from "../app.js";
 import { sendError } from "../errors.js";
+import { toAccountJson, type UserRow } from "../profile/account.js";
 import {
   CODE_TTL_MS,
+  MAX_ATTEMPTS,
   RESEND_WAIT_MS,
   emailDomain,
   generateCode,
   hashCode,
+  hashesMatch,
   normalizeEmail,
 } from "./codes.js";
 
@@ -15,6 +18,13 @@ import {
 // 254 is the longest an email address is allowed to be.
 const requestCodeBody = z.strictObject({
   email: z.string().max(254),
+});
+
+// The code must be text made of exactly 6 digits. Text, not a number, because
+// a code like "042917" would lose its leading zero as a number.
+const verifyCodeBody = z.strictObject({
+  email: z.string().max(254),
+  code: z.string().regex(/^\d{6}$/),
 });
 
 export function registerAuthRoutes(app: FastifyInstance, deps: AppDependencies): void {
@@ -84,5 +94,69 @@ export function registerAuthRoutes(app: FastifyInstance, deps: AppDependencies):
     }
 
     return reply.status(200).send({ ok: true });
+  });
+
+  // Step 2 of login: "here is the code I received". On success the user is
+  // logged in, and their account is created if this is their first time.
+  app.post("/auth/verify-code", async (request, reply) => {
+    const body = verifyCodeBody.safeParse(request.body);
+    if (!body.success) {
+      return sendError(reply, 400, "invalid_request", "Send a JSON body like { \"email\": \"...\", \"code\": \"123456\" }.");
+    }
+
+    const email = normalizeEmail(body.data.email);
+
+    // 1. Count this attempt BEFORE checking the code, in a single statement.
+    //    If we checked first and counted after, two guesses sent at the same
+    //    instant could both be checked while the counter still said "4".
+    //    RETURNING gives back the row as it is after the update.
+    const updated = await db.query<{ code_hash: string; expires_at: Date; attempts: number }>(
+      `UPDATE login_codes SET attempts = attempts + 1
+       WHERE email = $1
+       RETURNING code_hash, expires_at, attempts`,
+      [email],
+    );
+    const pending = updated.rows[0];
+
+    // 2. The code is accepted only if all four of these are true.
+    const codeIsValid =
+      pending !== undefined &&
+      pending.attempts <= MAX_ATTEMPTS &&
+      pending.expires_at.getTime() > Date.now() &&
+      hashesMatch(hashCode(body.data.code, email, config.loginCodeSecret), pending.code_hash);
+
+    if (!codeIsValid) {
+      // One message for every failure (no code, wrong, expired, too many
+      // tries), so the answer never tells an attacker which one it was.
+      return sendError(reply, 401, "invalid_code", "That code is wrong or has expired. Request a new one.");
+    }
+
+    // 3. A code works once: remove it.
+    await db.query("DELETE FROM login_codes WHERE email = $1", [email]);
+
+    // 4. Create the user on their first login. If the email already has an
+    //    account, ON CONFLICT DO NOTHING leaves it untouched.
+    await db.query(
+      `INSERT INTO users (email, institution_id, verified_at)
+       SELECT $1, id, now() FROM institutions WHERE $2 = ANY(email_domains)
+       ON CONFLICT (email) DO NOTHING`,
+      [email, emailDomain(email)],
+    );
+    const found = await db.query<UserRow>(
+      `SELECT id, email, first_name, last_name, bio, age_confirmed_at
+       FROM users WHERE email = $1`,
+      [email],
+    );
+    const user = found.rows[0];
+    if (user === undefined) {
+      // Only possible if the school was removed after the code was sent.
+      return sendError(reply, 400, "unsupported_email_domain", "This school is no longer supported.");
+    }
+
+    // 5. Give the app a signed token that says "this is user <id>".
+    //    "sub" (subject) is the standard JWT field for who the token is about.
+    const token = await reply.jwtSign({ sub: user.id });
+
+    return reply.status(200).send({ token, user: toAccountJson(user) });
   });
 }

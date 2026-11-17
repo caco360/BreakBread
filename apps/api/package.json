@@ -10,6 +10,7 @@
     "migrate:create": "node-pg-migrate create --migration-file-language sql"
   },
   "dependencies": {
+    "@fastify/jwt": "^10.2.8",
     "fastify": "^5.12.8",
     "ioredis": "^6.0.0",
     "node-pg-migrate": "^9.0.0",

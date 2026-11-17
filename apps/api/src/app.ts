@@ -1,4 +1,5 @@
 import Fastify, { type FastifyInstance } from "fastify";
+import fastifyJwt from "@fastify/jwt";
 import type pg from "pg";
 import type { Redis } from "ioredis";
 import type { EmailSender } from "./auth/email-sender.js";
@@ -40,8 +41,15 @@ function errorStatus(error: unknown): number {
 // Builds the app but does not start listening on a port.
 // Tests call this directly; server.ts calls it and then listens.
 export function buildApp(deps: AppDependencies): FastifyInstance {
-  const { db, redis } = deps;
+  const { db, redis, config } = deps;
   const app = Fastify({ logger: false });
+
+  // Adds reply.jwtSign() and request.jwtVerify() for login tokens.
+  // Every token is signed with our secret and stops working after 30 days.
+  app.register(fastifyJwt, {
+    secret: config.jwtSecret,
+    sign: { expiresIn: "30d" },
+  });
 
   // Called when a route throws, or when Fastify itself rejects a request
   // (for example a body that is not valid JSON). It makes those errors use
