@@ -8,6 +8,7 @@ import { registerAuthRoutes } from "./auth/routes.js";
 import type { Config } from "./config.js";
 import { sendError } from "./errors.js";
 import { registerAccountRoutes } from "./profile/account-routes.js";
+import { registerFoodProfileRoutes } from "./profile/food-profile-routes.js";
 
 // Everything the app needs from outside. It is passed in rather than created
 // here, so tests can decide what the app connects to and how emails are "sent".
@@ -110,6 +111,7 @@ export function buildApp(deps: AppDependencies): FastifyInstance {
   app.after(() => {
     registerAuthRoutes(app, deps);
     registerAccountRoutes(app, deps);
+    registerFoodProfileRoutes(app, deps);
   });
 
   // When the app closes, close its connections too so the process can exit.

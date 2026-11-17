@@ -50,7 +50,7 @@ Saved favorite spots and restaurant search, group matches, ratings, payments, pu
 ## 10. Milestones
 
 1. **Skeleton:** API with `/health`, Postgres and Redis in Docker, one test, CI.
-2. **Identity:** email code login, institutions table, food profile endpoints with tests, then the Expo screens.
+2. **Identity:** email code login, institutions table, account and food profile endpoints with tests (API done), then the Expo screens (not started; they get their own design first).
 3. **Live:** Go Live and Go Offline, Redis session with TTL, geo lookup.
 4. **Matching:** scoring, state machine, proposals over WebSocket.
 5. **Chat and confirm:** messages, mutual confirm, expiry.
